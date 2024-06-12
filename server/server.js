@@ -27,7 +27,7 @@ const server = new ApolloServer({
   ]
 });
 
-const { User } = require('./models')
+const User = require('./models/user')
 
 const startApolloServer = async () => {
   await server.start();
@@ -49,9 +49,29 @@ const startApolloServer = async () => {
   } 
 
   db.once('open', async () => {
-    const users = await User.find({});
-    console.log('USERS usernames:', users.map(u => u.username))
-    // console.log('USERS emails:', users.map(u => u.email))
+    try {
+      
+      // Quick test for creating and deleting a User instance
+      const newUser = new User({
+        username: 'testing user',
+        email: 'testing@test.com',
+        password: 'testingpassword'
+      });
+
+      await newUser.save();
+
+      const createdUser = await User.find({username: 'testing user'});
+      console.log('Created User: ', createdUser);
+
+      const deletedUser = await User.findOneAndDelete({username: 'testing user'})
+
+      console.log('Deleted User: ', deletedUser);
+
+    } catch (error) {
+      console.error(error);
+    }
+
+
     app.listen(PORT, () => {
       console.log(`API server running on port ${PORT}!`);
       console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
