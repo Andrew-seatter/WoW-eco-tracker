@@ -1,31 +1,37 @@
-const jwt = require('jsonwebtoken');
 const { GraphQLError } = require('graphql');
-const SECRET_KEY = process.env.SECRET_KEY;
+const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req) => {
-    const token = req.headers.authorization || '';
-  
-    if (!token) {
-      throw new GraphQLError('Authentication token is missing');
+const secret = 'mysecretssshhhhhhh';
+const expiration = '2h';
+
+module.exports = {
+  AuthenticationError: new GraphQLError('Could not authenticate user.', {
+    extensions: {
+      code: 'UNAUTHENTICATED',
+    },
+  }),
+  UserNotFoundError: new GraphQLError('User not found.', {
+    extensions: {
+      code: 404
     }
-  
-    try {
-
-      const decoded = jwt.verify(token, SECRET_KEY);
-      return { user: decoded };
-
-    } catch (err) {
-
-      switch (err.name) {
-        case jwt.TokenExpiredError:
-          throw new GraphQLError(`${err.message} : ${err.expiredAt}`);
-        case jwt.JsonWebTokenError:
-          throw new GraphQLError(`${err.message}`);
-        case jwt.NotBeforeError:
-          throw new GraphQLError(`${err.message} : ${err.date}`);
-      }
-      
+  }),
+  WrongPasswordError: new GraphQLError('Wrong password.', {
+    extensions: {
+      code: 401
     }
-  };
-  
-  module.exports = { authMiddleware };
+  }),
+  CreateAlreadyTakenError: key => new GraphQLError(`${key} already taken`, {
+    extensions: {
+      code: 400
+    }
+  }),
+  ShortPasswordError: new GraphQLError('Password does not meet minimum length requirement.', {
+    extensions: {
+      code: 400
+    }
+  }),
+  signToken: function ({ email, username, _id }) {
+    const payload = { email, username, _id };
+    return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
+  },
+};
